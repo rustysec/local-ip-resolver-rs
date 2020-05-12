@@ -1,0 +1,15 @@
+[package]
+name = "local-ip-resolver"
+version = "0.1.0"
+authors = ["rustysec <russ@infocyte.com>"]
+edition = "2018"
+
+[target.'cfg(windows)'.dependencies]
+ipconfig = "0.2"
+widestring = "0.4"
+
+[target.'cfg(windows)'.dependencies.winapi]
+version = "0.3"
+features = [
+    "inaddr"
+]
