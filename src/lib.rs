@@ -85,7 +85,7 @@ pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
 #[cfg(windows)]
 pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
     let host = get_host_ip(host)?;
-    let ip: std::net::Ipv4Addr = host.as_ref().parse()?;
+    let ip: std::net::Ipv4Addr = host.parse()?;
 
     let octets = ip.octets();
 
