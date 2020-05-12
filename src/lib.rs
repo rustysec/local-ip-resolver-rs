@@ -25,6 +25,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[cfg(target_os = "macos")]
 pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
+    let host = get_host_ip(host)?;
     use std::process::Command;
 
     let command = Command::new("route")
@@ -63,6 +64,7 @@ pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
 
 #[cfg(target_os = "linux")]
 pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
+    let host = get_host_ip(host)?;
     use std::process::Command;
 
     let command = Command::new("ip")
@@ -82,6 +84,7 @@ pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
 
 #[cfg(windows)]
 pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
+    let host = get_host_ip(host)?;
     let ip: std::net::Ipv4Addr = host.as_ref().parse()?;
 
     let octets = ip.octets();
@@ -124,12 +127,19 @@ pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
         .map(|ip| ip.to_string())
 }
 
+fn get_host_ip<S: AsRef<str>>(host: S) -> Result<String> {
+    use std::net::ToSocketAddrs;
+    let mut addrs = format!("{}:0", host.as_ref()).to_socket_addrs()?;
+    addrs
+        .next()
+        .map(|ip| ip.ip().to_string())
+        .ok_or(format!("Cannot resolve IP for {}", host.as_ref()).into())
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
     fn it_works() {
-        unsafe {
-            assert!(super::for_host("204.17.220.5").is_ok());
-        }
+        assert!(super::for_host("204.17.220.5").is_ok());
     }
 }
