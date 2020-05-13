@@ -1,6 +1,8 @@
 #[allow(non_camel_case_types)]
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
+#[cfg_attr(target_pointer_width = "32", path = "api32.rs")]
+#[cfg_attr(target_pointer_width = "64", path = "api64.rs")]
 mod api;
 
 const AF_INET: u32 = 2;

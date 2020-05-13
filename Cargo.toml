@@ -10,3 +10,6 @@ version = "0.3"
 features = [
     "inaddr"
 ]
+
+[profile.release]
+lto = true
