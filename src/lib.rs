@@ -6,20 +6,9 @@
 //!
 
 #[cfg(windows)]
-use widestring::WideCString;
+mod win;
 #[cfg(windows)]
-use winapi::shared::{
-    inaddr::IN_ADDR,
-    minwindef::{DWORD, ULONG},
-    ntdef::LPWSTR,
-};
-
-#[cfg(windows)]
-#[link(name = "iphlpapi")]
-extern "system" {
-    fn GetBestInterface(addr: IN_ADDR, index: *mut DWORD) -> u32;
-    fn GetAdapterIndex(adapter_name: LPWSTR, index: *mut ULONG) -> u32;
-}
+pub use win::*;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -86,45 +75,15 @@ pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
 pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
     let host = get_host_ip(host)?;
     let ip: std::net::Ipv4Addr = host.parse()?;
-
-    let octets = ip.octets();
-
-    let mut in_addr: IN_ADDR = unsafe { std::mem::zeroed() };
-    unsafe {
-        in_addr.S_un.S_un_b_mut().s_b1 = octets[3];
-        in_addr.S_un.S_un_b_mut().s_b2 = octets[2];
-        in_addr.S_un.S_un_b_mut().s_b3 = octets[1];
-        in_addr.S_un.S_un_b_mut().s_b4 = octets[0];
-    }
-
+    let in_addr: u32 = ip.into();
     let mut index: DWORD = 0;
 
     unsafe {
         GetBestInterface(in_addr, &mut index);
     }
 
-    let adapter = ipconfig::get_adapters()?
-        .into_iter()
-        .filter(|adapter| {
-            let name = WideCString::from_str(&format!(r"\DEVICE\TCPIP_{}", adapter.adapter_name()))
-                .unwrap();
-            let mut idx = 0;
-            unsafe {
-                GetAdapterIndex(name.as_ptr() as _, &mut idx);
-            }
-            idx == index
-        })
-        .next()
-        .ok_or(format!("Could not locate adapter #{}", index))?;
-
-    adapter
-        .ip_addresses()
-        .iter()
-        .filter(|addr| addr.is_ipv4())
-        .collect::<Vec<_>>()
-        .first()
-        .ok_or(format!("Could not get IP of adapter #{}", index).into())
-        .map(|ip| ip.to_string())
+    let ip = unsafe { get_ip_for_interface(index)? };
+    Ok(ip)
 }
 
 fn get_host_ip<S: AsRef<str>>(host: S) -> Result<String> {
