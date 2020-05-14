@@ -48,7 +48,7 @@ pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
         .split_whitespace()
         .nth(1)
         .map(|ip| ip.to_string())
-        .ok_or(String::from("Could not get IP address of interface").into())
+        .ok_or_else(|| String::from("Could not get IP address of interface").into())
 }
 
 #[cfg(target_os = "linux")]
@@ -63,12 +63,11 @@ pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
     let output = String::from_utf8(command.stdout)?
         .split_whitespace()
         .skip_while(|part| part != &"src")
-        .into_iter()
         .skip(1)
         .map(|ip| ip.to_string())
         .next();
 
-    output.ok_or(String::from("Could not get route information").into())
+    output.ok_or_else(|| String::from("Could not get route information").into())
 }
 
 #[cfg(windows)]
@@ -92,7 +91,7 @@ fn get_host_ip<S: AsRef<str>>(host: S) -> Result<String> {
     addrs
         .next()
         .map(|ip| ip.ip().to_string())
-        .ok_or(format!("Cannot resolve IP for {}", host.as_ref()).into())
+        .ok_or_else(|| format!("Cannot resolve IP for {}", host.as_ref()).into())
 }
 
 #[cfg(test)]
