@@ -12,7 +12,7 @@ pub use win::*;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "freebsd"))]
 pub fn for_host<S: AsRef<str>>(host: S) -> Result<String> {
     let host = get_host_ip(host)?;
     use std::process::Command;
